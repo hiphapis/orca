@@ -276,6 +276,36 @@ describe('orchestration RPC methods', () => {
       })
     })
 
+    it('judges the worker-start mode on the resolved defaults, not the bare flags', async () => {
+      setup()
+      mockCurrentWorkerStart()
+      vi.spyOn(runtime, 'getClientSettings').mockReturnValue({
+        experimentalNativeChat: true,
+        openAgentTabsInChatByDefault: true,
+        experimentalStructuredNativeChat: true
+      } as ReturnType<typeof runtime.getClientSettings>)
+      vi.spyOn(runtime, 'getOrchestrationWorkerLaunchDefaults').mockReturnValue({
+        agent: 'claude',
+        models: { claude: 'opus' },
+        efforts: {}
+      })
+      const task = db.createTask({ spec: 'a stored model decides the mode' })
+
+      const result = (await call('orchestration.workerStart', {
+        task: task.id,
+        from: 'term_coord'
+      })) as { mode: { mode: string; preferred: string; reason: string } }
+
+      // Why: a stored model reaches the agent, so it downgrades the structured default the
+      // same way an explicit --model does. Judging the bare flags would instead report
+      // agent_without_structured_session, because --agent was omitted.
+      expect(result.mode).toMatchObject({
+        mode: 'terminal',
+        preferred: 'structured',
+        reason: 'launch_preferences'
+      })
+    })
+
     it('drops an incompatible stored effort when the model is explicit', async () => {
       setup()
       mockCurrentWorkerStart()

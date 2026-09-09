@@ -2,6 +2,10 @@ import { OrchestrationError } from '../../../../orchestration/orchestration-erro
 import { defineMethod, type RpcMethod } from '../../../core'
 import { startFederatedWorker } from '../federation/federated-worker-start'
 import { startLocalWorker } from './local-worker-start'
+import {
+  decideWorkerStartMode,
+  readWorkerStartModeSettings
+} from '../../orchestration-worker-start-mode'
 import { resolveOrchestrationCaller } from '../runs/run-scope'
 import { WorkerStartParams } from './worker-start-schema'
 import { resolveOrchestrationWorkerLaunchDefaults } from './worker-launch-preferences'
@@ -59,8 +63,17 @@ export const ORCHESTRATION_WORKER_START_METHODS: RpcMethod[] = [
         ...(resolvedDefaults.model !== undefined ? { model: resolvedDefaults.model } : {}),
         ...(resolvedDefaults.effort !== undefined ? { effort: resolvedDefaults.effort } : {})
       }
+      // Why: the resolved defaults are the launch the mode receipt has to judge — a stored
+      // model or effort only applies to a terminal agent, exactly as an explicit flag does,
+      // and the stored agent is what decides whether a structured session exists at all.
+      const mode = decideWorkerStartMode({
+        params: launchParams,
+        settings: readWorkerStartModeSettings(runtime)
+      })
       if (params.on) {
-        return startFederatedWorker({
+        // A remote worker is always a terminal agent; the mode receipt rides along so the
+        // coordinator still learns why its structured default did not apply.
+        const receipt = await startFederatedWorker({
           params: launchParams,
           runtime,
           db,
@@ -69,6 +82,7 @@ export const ORCHESTRATION_WORKER_START_METHODS: RpcMethod[] = [
           orchestrationMutation,
           defaultsApplied: resolvedDefaults.applied
         })
+        return receipt && typeof receipt === 'object' ? { ...receipt, mode } : receipt
       }
       return startLocalWorker({
         params: { ...launchParams, timeoutMs: readinessTimeoutMs },
@@ -77,7 +91,8 @@ export const ORCHESTRATION_WORKER_START_METHODS: RpcMethod[] = [
         run,
         coordinatorPane,
         existingTask,
-        orchestrationMutation
+        orchestrationMutation,
+        mode
       })
     }
   })
