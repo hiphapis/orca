@@ -474,8 +474,11 @@ describe('Store', () => {
     expect(mismatched.orchestrationWorkerEfforts).toEqual({})
 
     const updated = store.updateSettings({
+      // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: sanitization exists for values the type system cannot produce; these are passed on purpose.
       orchestrationDefaultWorkerAgent: 'unknown' as never,
+      // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: sanitization exists for values the type system cannot produce; these are passed on purpose.
       orchestrationWorkerModels: { claude: ' opus ', cursor: '' } as never,
+      // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: sanitization exists for values the type system cannot produce; these are passed on purpose.
       orchestrationWorkerEfforts: { claude: ' high ', codex: 'future' } as never
     })
     expect(updated.orchestrationDefaultWorkerAgent).toBeNull()

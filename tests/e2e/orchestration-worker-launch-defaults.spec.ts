@@ -196,6 +196,7 @@ function readLedger(): LedgerEntry[] {
   return readFileSync(argvLedgerPath, 'utf8')
     .split(/\r?\n/)
     .filter(Boolean)
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the fake agent writes this ledger one JSON object per line; a malformed line fails the test that reads it.
     .map((line) => JSON.parse(line) as LedgerEntry)
 }
 
@@ -232,6 +233,7 @@ function startWorker(context: WorkerContext, args: string[]): WorkerStartResult 
       `worker-start exited ${result.status}: ${result.stderr.trim()} ${result.stdout.trim()}`
     )
   }
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the CLI prints its own --json envelope; ok is checked before result is read.
   const parsed = JSON.parse(result.stdout) as {
     ok: boolean
     result?: WorkerStartResult

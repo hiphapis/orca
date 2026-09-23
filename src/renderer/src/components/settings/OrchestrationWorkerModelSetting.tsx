@@ -14,6 +14,7 @@ import {
   mergeCatalogModels,
   type CatalogModel
 } from '../../../../shared/agent-session-option-catalog'
+import { isTuiAgent } from '../../../../shared/tui-agent-config'
 import { isTuiAgentEnabled } from '../../../../shared/tui-agent-selection'
 import { AgentIcon, getAgentCatalog } from '@/lib/agent-catalog'
 import { translate } from '@/i18n/i18n'
@@ -189,9 +190,7 @@ export function OrchestrationWorkerModelSetting(props: {
         <Select
           value={selectedAgent ?? REQUIRE_EXPLICIT_AGENT}
           onValueChange={(value) =>
-            props.onDefaultAgentChange(
-              value === REQUIRE_EXPLICIT_AGENT ? null : (value as TuiAgent)
-            )
+            props.onDefaultAgentChange(isTuiAgent(value) ? value : null)
           }
         >
           <SelectTrigger

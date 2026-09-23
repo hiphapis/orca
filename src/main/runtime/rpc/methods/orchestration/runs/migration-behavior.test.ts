@@ -278,7 +278,9 @@ describe('orchestration migration behavior', () => {
             ]
           }
         }
+        // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the federated call forwards an opaque params object; this asserts the injected model was stripped.
         expect((params as { model?: string }).model).toBeUndefined()
+        // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the federated call forwards an opaque params object; this asserts the injected effort was stripped.
         expect((params as { effort?: string }).effort).toBeUndefined()
         return {
           dispatchId: (params as { dispatchId: string }).dispatchId,
@@ -289,6 +291,7 @@ describe('orchestration migration behavior', () => {
         }
       })
 
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: startFederatedWorker returns an untyped receipt; this names only the fields asserted below.
     const started = (await startFederatedWorker({
       params: {
         task: task.id,

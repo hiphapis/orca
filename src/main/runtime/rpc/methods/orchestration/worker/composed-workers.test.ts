@@ -185,6 +185,7 @@ describe('orchestration RPC methods', () => {
     })
 
     it('returns empty worker defaults when the RuntimeStore settings omit them', () => {
+      // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the double implements getSettings, the only member getOrchestrationWorkerLaunchDefaults reaches.
       const runtimeWithoutWorkerSettings = new OrcaRuntimeService({
         getSettings: () => ({})
       } as never)
@@ -245,6 +246,7 @@ describe('orchestration RPC methods', () => {
       })
       const task = db.createTask({ spec: 'use worker launch defaults' })
 
+      // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the RPC returns an untyped envelope; this names only the fields asserted below.
       const result = (await call('orchestration.workerStart', {
         task: task.id,
         from: 'term_coord'
@@ -279,6 +281,7 @@ describe('orchestration RPC methods', () => {
     it('judges the worker-start mode on the resolved defaults, not the bare flags', async () => {
       setup()
       mockCurrentWorkerStart()
+      // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: getClientSettings returns every client setting; the mode decision reads only these three.
       vi.spyOn(runtime, 'getClientSettings').mockReturnValue({
         experimentalNativeChat: true,
         openAgentTabsInChatByDefault: true,
@@ -291,6 +294,7 @@ describe('orchestration RPC methods', () => {
       })
       const task = db.createTask({ spec: 'the stored agent decides the mode' })
 
+      // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the RPC returns an untyped envelope; this names only the fields asserted below.
       const result = (await call('orchestration.workerStart', {
         task: task.id,
         from: 'term_coord'
@@ -313,6 +317,7 @@ describe('orchestration RPC methods', () => {
       })
       const task = db.createTask({ spec: 'explicit model wins over defaults' })
 
+      // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the RPC returns an untyped envelope; this names only the fields asserted below.
       const result = (await call('orchestration.workerStart', {
         task: task.id,
         from: 'term_coord',

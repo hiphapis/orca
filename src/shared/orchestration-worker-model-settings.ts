@@ -48,6 +48,7 @@ function persistedOrchestrationWorkerMapMatches(
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return false
   }
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the checks above already rejected null, non-objects and arrays.
   const persisted = value as Record<string, unknown>
   const persistedEntries = Object.entries(persisted)
   return (

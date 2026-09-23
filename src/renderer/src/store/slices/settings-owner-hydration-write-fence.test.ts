@@ -30,15 +30,19 @@ it('normalizes orchestration worker preferences before renderer IPC', async () =
   const settingsSet = vi.fn().mockResolvedValue(undefined)
   vi.stubGlobal('window', { api: { settings: { set: settingsSet } } })
   const store = createTestStore()
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the store reads only the settings fields set here.
   store.setState({ settings: { notifications: {} } as AppState['settings'] })
 
   await store.getState().updateSettingsOrThrow({
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: sanitization exists for values the type system cannot produce; these are passed on purpose.
     orchestrationDefaultWorkerAgent: 'unknown' as never,
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: sanitization exists for values the type system cannot produce; these are passed on purpose.
     orchestrationWorkerModels: {
       codex: ' gpt-5.5 ',
       claude: ' opus ',
       gemini: 'unsupported'
     } as never,
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: sanitization exists for values the type system cannot produce; these are passed on purpose.
     orchestrationWorkerEfforts: {
       codex: ' max ',
       claude: ' high ',
@@ -58,6 +62,7 @@ it('revalidates stored efforts when only the worker model changes', async () => 
   vi.stubGlobal('window', { api: { settings: { set: settingsSet } } })
   const store = createTestStore()
   store.setState({
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the store reads only the settings fields set here.
     settings: {
       notifications: {},
       orchestrationWorkerModels: { codex: 'gpt-5.6-luna' },
@@ -80,6 +85,7 @@ it('does not rewrite valid stored efforts when only the worker model changes', a
   vi.stubGlobal('window', { api: { settings: { set: settingsSet } } })
   const store = createTestStore()
   store.setState({
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the store reads only the settings fields set here.
     settings: {
       notifications: {},
       orchestrationWorkerModels: { codex: 'gpt-5.6-luna' },

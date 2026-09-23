@@ -112,11 +112,14 @@ describe('load-time normalization durability', () => {
 
   it('persists repaired orchestration worker preferences and reloads them', async () => {
     const settled = await settledProfile()
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: load-time repair exists for values the type system cannot produce; this plants one.
     settled.settings.orchestrationDefaultWorkerAgent = 'unknown' as never
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: load-time repair exists for values the type system cannot produce; this plants one.
     settled.settings.orchestrationWorkerModels = {
       codex: '  gpt-5.6-luna  ',
       unknown: 'ignored'
     } as never
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: load-time repair exists for values the type system cannot produce; this plants one.
     settled.settings.orchestrationWorkerEfforts = {
       codex: ' max ',
       unknown: 'ignored'
@@ -140,6 +143,7 @@ describe('load-time normalization durability', () => {
       vi.useRealTimers()
     }
 
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: readDataFile parses the file this test just wrote; the assertions read only those fields.
     const persisted = readDataFile() as PersistedState
     expect(persisted.settings.orchestrationDefaultWorkerAgent).toBeNull()
     expect(persisted.settings.orchestrationWorkerModels).toEqual({ codex: 'gpt-5.6-luna' })
