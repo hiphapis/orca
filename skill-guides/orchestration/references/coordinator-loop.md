@@ -30,13 +30,18 @@ ORCA orchestration worker-start --task <task_id> --worktree current --json
 ```
 
 Pass a flag only when the user named that choice or the task requires a
-specific agent's unique capability. For a fresh Claude, Codex, or Cursor
-terminal, `--model` accepts an opaque provider model ID; add `--effort` only
-when that model supports it:
+specific agent's unique capability. For a fresh Claude, Codex, Cursor,
+Antigravity, or Muse terminal, `--model` accepts an opaque provider model ID;
+add `--effort` only when that model supports it:
 
 ```text
 ORCA orchestration worker-start --task <task_id> --worktree current --agent claude --model opus --effort high --json
+ORCA orchestration worker-start --task <task_id> --worktree current --agent muse --model muse-spark-1.3 --json
 ```
+
+Other agents, including `opencode`, reject `--model`; they run the model set in
+their own config, so a coordinator wanting a same-model opencode worker relies
+on that config.
 
 Quality, depth, thoroughness, or meticulousness language is not a request for a
 specific agent, model, or effort; treat it as one only when the user names an
