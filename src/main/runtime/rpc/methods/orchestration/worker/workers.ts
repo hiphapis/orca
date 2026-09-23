@@ -1,5 +1,5 @@
 import { OrchestrationError } from '../../../../orchestration/orchestration-error'
-import { defineMethod, type RpcMethod } from '../../../core'
+import { defineMethod } from '../../../core'
 import { startFederatedWorker } from '../federation/federated-worker-start'
 import { startLocalWorker } from './local-worker-start'
 import {
@@ -15,7 +15,7 @@ import {
 } from '../../../../../../shared/orchestration-timing-budgets'
 import { assertWorkerStartTaskSpecWithinPromptBudget } from './worker-start-prompt-budget'
 
-export const ORCHESTRATION_WORKER_START_METHODS: RpcMethod[] = [
+export const ORCHESTRATION_WORKER_START_METHODS = [
   defineMethod({
     name: 'orchestration.workerStart',
     params: WorkerStartParams,
@@ -63,9 +63,8 @@ export const ORCHESTRATION_WORKER_START_METHODS: RpcMethod[] = [
         ...(resolvedDefaults.model !== undefined ? { model: resolvedDefaults.model } : {}),
         ...(resolvedDefaults.effort !== undefined ? { effort: resolvedDefaults.effort } : {})
       }
-      // Why: the resolved defaults are the launch the mode receipt has to judge — a stored
-      // model or effort only applies to a terminal agent, exactly as an explicit flag does,
-      // and the stored agent is what decides whether a structured session exists at all.
+      // Why: the stored worker agent decides whether a structured session exists at all;
+      // judging the bare flags would downgrade every launch that omits --agent.
       const mode = decideWorkerStartMode({
         params: launchParams,
         settings: readWorkerStartModeSettings(runtime)

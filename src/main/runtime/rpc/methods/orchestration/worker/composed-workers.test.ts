@@ -286,24 +286,21 @@ describe('orchestration RPC methods', () => {
       } as ReturnType<typeof runtime.getClientSettings>)
       vi.spyOn(runtime, 'getOrchestrationWorkerLaunchDefaults').mockReturnValue({
         agent: 'claude',
-        models: { claude: 'opus' },
+        models: {},
         efforts: {}
       })
-      const task = db.createTask({ spec: 'a stored model decides the mode' })
+      const task = db.createTask({ spec: 'the stored agent decides the mode' })
 
       const result = (await call('orchestration.workerStart', {
         task: task.id,
         from: 'term_coord'
       })) as { mode: { mode: string; preferred: string; reason: string } }
 
-      // Why: a stored model reaches the agent, so it downgrades the structured default the
-      // same way an explicit --model does. Judging the bare flags would instead report
-      // agent_without_structured_session, because --agent was omitted.
-      expect(result.mode).toMatchObject({
-        mode: 'terminal',
-        preferred: 'structured',
-        reason: 'launch_preferences'
-      })
+      // Why: the resolved agent is the only launch field the mode receipt reads. Judging the
+      // bare flags would report agent_without_structured_session for every launch that leaves
+      // --agent to the stored default.
+      expect(result.mode).toMatchObject({ mode: 'terminal', preferred: 'structured' })
+      expect(result.mode.reason).not.toBe('agent_without_structured_session')
     })
 
     it('drops an incompatible stored effort when the model is explicit', async () => {
@@ -610,9 +607,15 @@ describe('orchestration RPC methods', () => {
       )
     })
 
-    it.each(['codex-update-prompt', 'codex-trust-workspace'] as const)(
+    // Why the second column: an older host still publishes the codex-* token, and this receipt
+    // reaches the user verbatim -- so it names the neutral spelling the same way the CLI does.
+    it.each([
+      ['codex-update-prompt', 'codex-update-prompt (agent-update-prompt)'],
+      ['codex-trust-workspace', 'codex-trust-workspace (agent-trust-workspace)'],
+      ['agent-trust-workspace', 'agent-trust-workspace']
+    ] as const)(
       'returns a truthful readiness failure for %s',
-      async (blockedReason) => {
+      async (blockedReason, expectedReason) => {
         setup()
         mockCurrentWorkerStart()
         vi.mocked(runtime.waitForTerminal).mockResolvedValueOnce({
@@ -634,7 +637,7 @@ describe('orchestration RPC methods', () => {
         expect(result).toMatchObject({
           state: 'failed',
           failedStage: 'agent_readiness',
-          lastError: `Agent startup blocked: ${blockedReason}`
+          lastError: `Agent startup blocked: ${expectedReason}`
         })
         expect(runtime.sendTerminalAgentPrompt).not.toHaveBeenCalled()
       }
@@ -706,7 +709,7 @@ describe('orchestration RPC methods', () => {
       )
       expect(result.effects).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ role: 'agent', action: 'reused_agent_terminal' }),
+          expect.objectContaining({ role: 'agent', action: 'created' }),
           expect.objectContaining({ role: 'setup', action: 'created' }),
           expect.objectContaining({ role: 'configured_tab', action: 'created' })
         ])

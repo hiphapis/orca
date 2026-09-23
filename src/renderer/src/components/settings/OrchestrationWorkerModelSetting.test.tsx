@@ -87,7 +87,13 @@ describe('OrchestrationWorkerModelSetting', () => {
 
   it('shows model controls only for agents with launch-time model support', () => {
     const agents = getWorkerModelAgents()
-    expect(agents.map((agent) => agent.id)).toEqual(['claude', 'codex', 'cursor'])
+    expect(agents.map((agent) => agent.id)).toEqual([
+      'claude',
+      'codex',
+      'muse',
+      'antigravity',
+      'cursor'
+    ])
     expect(agents.find((agent) => agent.id === 'codex')?.models).toEqual(
       expect.arrayContaining([expect.objectContaining({ id: 'gpt-5.6-luna' })])
     )
