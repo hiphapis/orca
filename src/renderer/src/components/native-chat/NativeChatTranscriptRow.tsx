@@ -45,7 +45,7 @@ export const NativeChatTranscriptRow = memo(function NativeChatTranscriptRow({
   return (
     <div className="flex flex-col gap-5">
       {receipt ? (
-        <NativeChatResolutionReceipt body={receipt} />
+        <NativeChatResolutionReceipt body={receipt} disclosureId={message.id} />
       ) : (
         <MessageRow
           message={message}
@@ -56,6 +56,7 @@ export const NativeChatTranscriptRow = memo(function NativeChatTranscriptRow({
           }
           expandSignal={context.expandSignal}
           activeTurnIsWorking={slot.activeTurnIsWorking}
+          trailingRun={slot.trailingRun}
           onScrollMessageToTop={context.onScrollMessageToTop}
           onLinkClick={context.onLinkClick}
           allowFileUriLinks={context.allowFileUriLinks}

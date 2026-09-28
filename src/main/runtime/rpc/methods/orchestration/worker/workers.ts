@@ -21,7 +21,7 @@ export const ORCHESTRATION_WORKER_START_METHODS = [
     params: WorkerStartParams,
     handler: async (
       params,
-      { runtime, orchestrationMutation, orchestrationCompatibilityEvidence }
+      { runtime, orchestrationMutation, orchestrationCompatibilityEvidence, orchestrationCaller }
     ) => {
       if (!isWorkerStartTimeoutWithinTimerLimit(params.timeoutMs)) {
         throw new OrchestrationError(
@@ -31,11 +31,12 @@ export const ORCHESTRATION_WORKER_START_METHODS = [
       }
       const readinessTimeoutMs = resolveWorkerStartReadinessTimeoutMs(params.timeoutMs)
       const db = runtime.getOrchestrationDb()
-      const coordinatorPane = resolveOrchestrationCaller(runtime, {
+      const coordinator = resolveOrchestrationCaller(runtime, {
         callerTerminalHandle: params.from,
-        callerEvidence: orchestrationCompatibilityEvidence
+        callerEvidence: orchestrationCompatibilityEvidence,
+        callerSession: orchestrationCaller
       })
-      const run = coordinatorPane ? db.getCurrentRunForPane(coordinatorPane) : undefined
+      const run = coordinator ? db.getCurrentRunForCoordinator(coordinator) : undefined
       if (!run || (params.run && params.run !== run.id)) {
         throw new OrchestrationError(
           'consumer_fenced',
@@ -79,6 +80,7 @@ export const ORCHESTRATION_WORKER_START_METHODS = [
           runId: run.id,
           task: existingTask,
           orchestrationMutation,
+          callerSession: orchestrationCaller,
           defaultsApplied: resolvedDefaults.applied
         })
         return receipt && typeof receipt === 'object' ? { ...receipt, mode } : receipt
@@ -88,7 +90,8 @@ export const ORCHESTRATION_WORKER_START_METHODS = [
         runtime,
         db,
         run,
-        coordinatorPane,
+        coordinator,
+        callerSession: orchestrationCaller,
         existingTask,
         orchestrationMutation,
         mode
