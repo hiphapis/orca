@@ -47,9 +47,11 @@ import { createPinnedTabCloseConfirmSlice } from './pinned-tab-close-confirm'
 import { createRecentlyClosedTabsSlice } from './recently-closed-tabs'
 import { createOrcaProfilesSlice } from './orca-profiles'
 import { createNewIssueDraftSlice } from './new-issue-draft'
+import { createFeedbackDraftSlice } from './feedback-draft'
 import { createTaskCreationDraftsSlice } from './task-creation-drafts'
 import { createRemoteServerUpdatesSlice } from './remote-server-updates'
 import { createTerminalQuickCommandHostsSlice } from './terminal-quick-command-hosts'
+import { createStructuredSessionLaunchDirectorySlice } from './structured-session-launch-directories'
 import { translate } from '@/i18n/i18n'
 
 export const TEST_REPO = {
@@ -103,9 +105,11 @@ export function createTestStore() {
     ...createRecentlyClosedTabsSlice(...a),
     ...createOrcaProfilesSlice(...a),
     ...createNewIssueDraftSlice(...a),
+    ...createFeedbackDraftSlice(...a),
     ...createTaskCreationDraftsSlice(...a),
     ...createRemoteServerUpdatesSlice(...a),
-    ...createTerminalQuickCommandHostsSlice(...a)
+    ...createTerminalQuickCommandHostsSlice(...a),
+    ...createStructuredSessionLaunchDirectorySlice(...a)
   }))
 }
 

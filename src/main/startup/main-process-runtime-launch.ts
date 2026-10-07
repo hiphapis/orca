@@ -39,6 +39,7 @@ import { triggerStartupNotificationRegistration } from '../ipc/startup-notificat
 import { startDesktopPushService } from './main-process-push-startup'
 import { mainProcessState as state } from './main-process-state'
 import { logStartupMilestone } from './startup-diagnostics'
+import { scheduleAgentLaunchRecordWarmup } from './agent-launch-record-warmup'
 import { emitServeBrowserIdentityActionLine } from '../server/serve-stdout-boundary'
 import { getBrowserIdentityModeStatus } from '../browser/browser-identity-mode-store'
 
@@ -162,6 +163,7 @@ async function launchServeMode(
     console.error('[runtime] Failed to start headless RPC transport:', error)
     throw error
   })
+  scheduleAgentLaunchRecordWarmup(null)
   // Why: a phone paired to a headless host still registers and unregisters its token;
   // it simply never receives a push, because nothing dispatches notifications here.
   startDesktopPushService(runtimeRpc)
@@ -208,7 +210,7 @@ async function launchServeMode(
   state.automations?.start()
   // Why: serve deletes worktrees too, and the history GC that normally drains delete tombstones is
   // armed from the main window — without this, a quit mid-removal leaks the tree until a desktop launch.
-  scheduleAllPendingHistoryTreeRemovals()
+  void scheduleAllPendingHistoryTreeRemovals()
   emitServeBrowserIdentityActionLine(getBrowserIdentityModeStatus())
   await printServeReady(serveOptions)
 }
@@ -237,6 +239,7 @@ async function launchDesktopMode(
         }
       )
   ])
+  scheduleAgentLaunchRecordWarmup(win)
   if (!runtimeRpcStartResult.ok) {
     // Why gated: this dialog is the only launch-phase text read through translateMain, and i18n
     // now settles alongside this phase — without the wait a non-English user could get the

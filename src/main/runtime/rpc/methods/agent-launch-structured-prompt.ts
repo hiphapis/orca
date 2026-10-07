@@ -54,25 +54,30 @@ export async function commitStructuredAgentSessionLaunchPrompt(args: {
     queuedAt: Date.now()
   })
   try {
-    const result = await args.host.send(
-      args.caller,
-      structuredAgentSessionSendMutation(entry, args.fence)
-    )
+    const result = await args.host.send(args.caller, {
+      ...structuredAgentSessionSendMutation(entry, args.fence),
+      // A person's first prompt, sent for them: kept as a card if a restart or a close comes first.
+      personsMessage: true
+    })
     return result.ok ? result.value.clientMessageId : null
   } catch (error) {
     // Settlement can fail after the journal append. Re-read the authoritative row before asking
     // the caller to resend, otherwise a retry creates a duplicate turn.
     try {
-      const committed = args.host
-        .journalSnapshot(args.sessionId)
-        .submissions.find((submission) => submission.clientMessageId === clientMessageId)
+      const committed = (await args.host.journalSnapshot(args.sessionId)).submissions.find(
+        (submission) => submission.clientMessageId === clientMessageId
+      )
       if (committed) {
         return clientMessageId
       }
     } catch {
       // The host may have gone away before the snapshot; the caller retains the text in that case.
     }
-    console.warn('[agent-launch] the session was created, its launch prompt was not sent', error)
+    args.host.deps.logger.warn("sending a created chat's launch prompt failed", {
+      scope: 'launch-prompt',
+      sessionId: args.sessionId,
+      error
+    })
     return null
   }
 }
