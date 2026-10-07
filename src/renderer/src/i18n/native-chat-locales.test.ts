@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import en from './locales/en.json'
 import es from './locales/es.json'
+import fr from './locales/fr.json'
 import ja from './locales/ja.json'
 import ko from './locales/ko.json'
 import zh from './locales/zh.json'
@@ -26,6 +27,21 @@ const codexEffortValues = new Set(
 )
 
 describe('native chat locale copy', () => {
+  it.each(Object.entries({ en, es, fr, ja, ko, zh }))(
+    '%s covers chat naming controls and ordinary labels',
+    (_code, catalog) => {
+      const names = catalog.settings.chat.names
+      expect(Object.keys(names).sort()).toEqual(Object.keys(en.settings.chat.names).sort())
+      for (const value of Object.values(names)) {
+        expect(value.trim()).not.toBe('')
+      }
+      expect(names.description).toContain('Claude Chat')
+      expect(names.description).toContain('Codex Chat')
+      expect(catalog.auto.components.settings.Settings['17bdee4ff1']).not.toContain('Git')
+      expect(catalog.auto.components.settings.Settings['43b68e10f0']).not.toContain('Git')
+    }
+  )
+
   it('covers every Codex effort choice', () => {
     for (const value of codexEffortValues) {
       expect(localizedEffortValues).toContain(value)
@@ -57,8 +73,6 @@ describe('native chat locale copy', () => {
         'sessionOptions',
         'chooseInAgentPicker',
         'toggleOption',
-        'valueIsDefault',
-        'valueNotReported',
         'sentNotConfirmed'
       ] as const) {
         expect(composer[key].trim()).not.toBe('')

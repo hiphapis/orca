@@ -1,10 +1,12 @@
 import type { AgentLaunchPreferences } from '../../../../../../shared/agent-session-host-authority'
 import {
   findCatalogModel,
-  findCatalogOption,
-  getAgentSessionOptionCatalog
+  findCatalogOption
 } from '../../../../../../shared/agent-session-option-catalog'
-import { resolveAgentSessionOptionLaunch } from '../../../../../../shared/agent-session-option-launch'
+import {
+  getAgentSessionOptionLaunchCatalog,
+  resolveAgentSessionOptionLaunch
+} from '../../../../../../shared/agent-session-option-launch'
 import {
   resolveOrchestrationWorkerEffort,
   supportsLaunchModel,
@@ -126,6 +128,8 @@ export function createPendingWorkerLaunchReceipt(args: {
 
 export function resolveWorkerLaunchPreferences(args: {
   agent: TuiAgent
+  openCodeModelLaunchSupported?: boolean
+  createsWorktree?: boolean
   model?: string
   effort?: string
 }): {
@@ -142,7 +146,21 @@ export function resolveWorkerLaunchPreferences(args: {
     }
   }
 
-  const catalog = getAgentSessionOptionCatalog(args.agent)
+  if (args.agent === 'opencode' && args.createsWorktree) {
+    throw new OrchestrationError(
+      'capability_unsupported',
+      'OpenCode model selection requires an existing worktree. Use --worktree current or an existing worktree selector, or omit --model.'
+    )
+  }
+
+  if (args.agent === 'opencode' && args.openCodeModelLaunchSupported !== true) {
+    throw new OrchestrationError(
+      'capability_unsupported',
+      'This OpenCode TUI cannot verify launch-time model selection. Omit --model or use a supported OpenCode CLI.'
+    )
+  }
+
+  const catalog = getAgentSessionOptionLaunchCatalog(args.agent)
   if (!catalog?.supportsWorkerLaunchPreferences || !catalog.modelApply.launchArgs) {
     throw new OrchestrationError(
       'invalid_argument',

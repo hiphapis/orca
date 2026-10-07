@@ -2,6 +2,7 @@ import { ipcMain } from 'electron'
 import type { Store } from '../persistence'
 import type { OrcaRuntimeService } from '../runtime/orca-runtime'
 import { parseTerminalSurfaceCloseTarget } from '../../shared/terminal-surface-close-target'
+import { markAgentLaunchesClosedByUser } from '../agent-launch/agent-launch-pane-attachment'
 import type {
   WorkspaceSessionPatch,
   WorkspaceSessionState
@@ -33,12 +34,22 @@ export function registerSessionHandlers(store: Store, runtime: OrcaRuntimeServic
   // Why: a renderer save cannot shrink membership main owns, so each close commits it explicitly.
   ipcMain.handle(
     'session:close-terminal-surface',
-    (_event, args: { worktreeId?: unknown; target?: unknown } | undefined) => {
+    (_event, args: { worktreeId?: unknown; target?: unknown; reason?: unknown } | undefined) => {
       const target = parseTerminalSurfaceCloseTarget(args?.target)
       if (typeof args?.worktreeId !== 'string' || !target) {
         throw new Error('invalid_terminal_surface')
       }
-      return runtime.closeTerminalSurfaceFromRenderer(args.worktreeId, target)
+      // Why only these two: main alone closes a tab for its process exit.
+      const reason = args.reason === 'cleanup' ? 'cleanup' : 'user'
+      if (reason === 'user') {
+        // A launch still starting or delivering in what the user closed stops, and says so.
+        markAgentLaunchesClosedByUser(args.worktreeId, target)
+      }
+      return runtime.closeTerminalSurfaceFromRenderer({
+        worktreeId: args.worktreeId,
+        target,
+        reason
+      })
     }
   )
 

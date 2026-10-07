@@ -91,8 +91,10 @@ describe('OrchestrationWorkerModelSetting', () => {
       'claude',
       'codex',
       'muse',
+      'omp',
       'antigravity',
-      'cursor'
+      'cursor',
+      'codebuddy'
     ])
     expect(agents.find((agent) => agent.id === 'codex')?.models).toEqual(
       expect.arrayContaining([expect.objectContaining({ id: 'gpt-5.6-luna' })])
@@ -152,7 +154,14 @@ describe('OrchestrationWorkerModelSetting', () => {
     }
 
     expect(effortChoices('gpt-account-model')).toEqual(['low', 'high'])
-    expect(effortChoices('gpt-unseeded-model')).toEqual(['low', 'medium', 'high', 'xhigh'])
+    expect(effortChoices('gpt-unseeded-model')).toEqual([
+      'low',
+      'medium',
+      'high',
+      'xhigh',
+      'max',
+      'ultra'
+    ])
   })
 
   it('validates a preserved effort against a discovered model catalog', () => {

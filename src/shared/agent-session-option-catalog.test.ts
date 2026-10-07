@@ -36,8 +36,9 @@ describe('agent session option catalog', () => {
     expect(levelsFor('gpt-5.2-codex')).toEqual(upToXhigh)
   })
 
-  // Unseeded/unknown Codex models get the shared ceiling every seeded model supports.
-  it('offers the shared xhigh ceiling for unseeded Codex models', () => {
+  // Unseeded/unknown Codex models get the widest ladder, since a model newer than this seed
+  // usually supports max and ultra and Codex falls back rather than failing.
+  it('offers the shared ultra ceiling for unseeded Codex models', () => {
     const option = getAgentSessionOptionCatalog('codex')?.unknownModelOptions?.find(
       (candidate) => candidate.id === 'effort'
     )
@@ -45,7 +46,9 @@ describe('agent session option catalog', () => {
       'low',
       'medium',
       'high',
-      'xhigh'
+      'xhigh',
+      'max',
+      'ultra'
     ])
   })
 

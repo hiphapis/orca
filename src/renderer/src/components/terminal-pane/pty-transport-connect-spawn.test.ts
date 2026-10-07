@@ -26,6 +26,16 @@ describe('createIpcPtyTransport', () => {
     restorePtySpecWindow(originalWindow)
   })
 
+  it('exposes explicit local or direct SSH ownership without inferring it from the workspace', async () => {
+    const { createIpcPtyTransport } = await import('./pty-transport')
+    for (const connectionId of [undefined, 'qa']) {
+      const transport = createIpcPtyTransport({ connectionId })
+      expect(transport.getExecutionHostId?.()).toBe(connectionId ? 'ssh:qa' : 'local')
+      expect(transport.getRuntimeEnvironmentId?.()).toBeNull()
+      transport.destroy?.()
+    }
+  })
+
   it.each([0, 1, 420])(
     'preserves snapshot sequence and keyboard proof %s across IPC reattach',
     async (seq) => {
@@ -56,6 +66,28 @@ describe('createIpcPtyTransport', () => {
     transport.disconnect()
   })
 
+  // A pane drag waits out a spawn whose result would bind the leaf to its old tab.
+  it('reports a connect as pending only until its PTY id arrives', async () => {
+    const { createIpcPtyTransport } = await import('./pty-transport')
+    let resolveSpawn!: (value: { id: string }) => void
+    vi.mocked(window.api.pty.spawn).mockReturnValue(
+      new Promise((resolve) => {
+        resolveSpawn = resolve
+      })
+    )
+    const transport = createIpcPtyTransport({})
+    expect(transport.isConnectPending?.()).toBe(false)
+
+    const connecting = transport.connect({ url: '', callbacks: {} })
+    expect(transport.isConnectPending?.()).toBe(true)
+    resolveSpawn({ id: 'pty-late' })
+    await connecting
+
+    expect(transport.getPtyId()).toBe('pty-late')
+    expect(transport.isConnectPending?.()).toBe(false)
+    transport.disconnect()
+  })
+
   it('does not create a PTY when the pane generation is stale', async () => {
     const { createIpcPtyTransport } = await import('./pty-transport')
     const spawn = window.api.pty.spawn as unknown as ReturnType<typeof vi.fn>
@@ -66,6 +98,22 @@ describe('createIpcPtyTransport', () => {
     ).resolves.toBeUndefined()
 
     expect(spawn).not.toHaveBeenCalled()
+  })
+
+  it('keeps the recovery hint and raw diagnostic from a wrapped spawn error', async () => {
+    const { createIpcPtyTransport } = await import('./pty-transport')
+    vi.mocked(window.api.pty.spawn).mockRejectedValueOnce(
+      new Error(
+        "Error invoking remote method 'pty:spawn': Error: Close unused terminals, then try again.\nnode-pty: open_slave failed: EMFILE (errno 24)"
+      )
+    )
+    const onError = vi.fn()
+
+    await createIpcPtyTransport({}).connect({ url: '', callbacks: { onError } })
+
+    expect(onError).toHaveBeenCalledWith(
+      'Close unused terminals, then try again.\nnode-pty: open_slave failed: EMFILE (errno 24)'
+    )
   })
 
   it('threads provider command ownership through the spawn IPC', async () => {
