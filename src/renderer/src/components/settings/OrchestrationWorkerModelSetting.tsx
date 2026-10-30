@@ -189,9 +189,7 @@ export function OrchestrationWorkerModelSetting(props: {
       <div className="flex min-w-0 flex-wrap items-center gap-2 py-2">
         <Select
           value={selectedAgent ?? REQUIRE_EXPLICIT_AGENT}
-          onValueChange={(value) =>
-            props.onDefaultAgentChange(isTuiAgent(value) ? value : null)
-          }
+          onValueChange={(value) => props.onDefaultAgentChange(isTuiAgent(value) ? value : null)}
         >
           <SelectTrigger
             size="sm"

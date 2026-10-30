@@ -193,11 +193,13 @@ function readLedger(): LedgerEntry[] {
   if (!existsSync(argvLedgerPath)) {
     return []
   }
-  return readFileSync(argvLedgerPath, 'utf8')
-    .split(/\r?\n/)
-    .filter(Boolean)
-    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the fake agent writes this ledger one JSON object per line; a malformed line fails the test that reads it.
-    .map((line) => JSON.parse(line) as LedgerEntry)
+  return (
+    readFileSync(argvLedgerPath, 'utf8')
+      .split(/\r?\n/)
+      .filter(Boolean)
+      // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the fake agent writes this ledger one JSON object per line; a malformed line fails the test that reads it.
+      .map((line) => JSON.parse(line) as LedgerEntry)
+  )
 }
 
 function readSpawns(): LedgerEntry[] {
