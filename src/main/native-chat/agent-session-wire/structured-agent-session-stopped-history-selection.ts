@@ -1,9 +1,9 @@
-// What a handover carries of the stopped messages owed to the agent, chosen in the session's
-// serialized handover step so a phone and a desktop sending at once deliver each one once.
+// Select carried history inside serialized handover to deliver each message once across devices.
 
 import type {
   AgentJournalMessageItem,
-  AgentJournalSubmission
+  AgentJournalSubmission,
+  AgentJournalTurnScope
 } from '../../../shared/agent-session-journal-types'
 import { agentJournalSubmissionKey } from '../../../shared/agent-session-journal-item-key'
 import {
@@ -16,23 +16,20 @@ import {
 import type { AgentSessionJournal } from '../agent-session-journal/journal-store'
 
 type StoppedHistoryContext = {
-  journal: Pick<
-    AgentSessionJournal,
-    'submissions' | 'itemBody' | 'liveTurnScope' | 'stoppedHistoryCarried'
-  > & {
+  journal: Pick<AgentSessionJournal, 'submissions' | 'itemBody' | 'stoppedHistoryCarried'> & {
     context: Pick<AgentSessionJournal['context'], 'floor'>
   }
 }
 
-/** What a person's words-only send that opens a turn carries of the owed messages; null for a
- *  steer into a running turn, which may never record it, and for any other send. */
+/** Only personal words-only turn-opening sends carry history; steers may never record it. */
 export function carriedStoppedHistory(
   ctx: StoppedHistoryContext,
+  turnScope: AgentJournalTurnScope,
   submission: AgentJournalSubmission,
   body: AgentJournalMessageItem
 ): StoppedHistoryDelivery | null {
   if (
-    ctx.journal.liveTurnScope().kind !== 'thread' ||
+    turnScope.kind !== 'thread' ||
     !agentSessionSendDeliversStoppedHistory(submission, body) ||
     !agentSessionSendCarriesStoppedHistory(body)
   ) {
@@ -41,7 +38,9 @@ export function carriedStoppedHistory(
   return selectStoppedHistory(
     agentSessionStoppedHistoryOwed({
       submissions: ctx.journal.submissions(),
-      carried: ctx.journal.stoppedHistoryCarried(),
+      carried: new Map(
+        [...ctx.journal.stoppedHistoryCarried()].filter(([id]) => id !== submission.clientMessageId)
+      ),
       clearSequence: ctx.journal.context.floor()?.sequence ?? 0,
       body: (id) => ctx.journal.itemBody(agentJournalSubmissionKey(id))
     }),
