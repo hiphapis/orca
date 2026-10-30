@@ -449,6 +449,7 @@ test('headline defaults set in Orchestration settings reach the spawned agent', 
   orcaPage,
   electronApp
 }) => {
+  // Launches the app, drives Settings, then waits out worker-start and worker_done, each on its own 30s poll.
   test.setTimeout(180_000)
   const context = await prepareContext(orcaPage, electronApp)
   const section = await openOrchestrationSettings(orcaPage)
@@ -493,6 +494,7 @@ test('named Claude agent still receives its stored model and effort', async ({
   orcaPage,
   electronApp
 }) => {
+  // Launches the app, drives Settings, then waits out worker-start and worker_done, each on its own 30s poll.
   test.setTimeout(180_000)
   const context = await prepareContext(orcaPage, electronApp)
   await setWorkerPreferences(orcaPage, {
@@ -527,6 +529,7 @@ test('explicit model overrides the stored model for a named agent', async ({
   orcaPage,
   electronApp
 }) => {
+  // Launches the app, drives Settings, then waits out worker-start and worker_done, each on its own 30s poll.
   test.setTimeout(180_000)
   const context = await prepareContext(orcaPage, electronApp)
   await setWorkerPreferences(orcaPage, {
@@ -552,6 +555,7 @@ test('explicit model overrides the stored model for a named agent', async ({
 })
 
 test('terminal reuse does not inject stored worker defaults', async ({ orcaPage, electronApp }) => {
+  // Launches the app, drives Settings, then waits out worker-start and worker_done, each on its own 30s poll.
   test.setTimeout(180_000)
   const context = await prepareContext(orcaPage, electronApp)
   await setWorkerPreferences(orcaPage, {
@@ -585,6 +589,7 @@ test('stored effort without a stored model does not fail worker-start', async ({
   orcaPage,
   electronApp
 }) => {
+  // Launches the app, drives Settings, then waits out worker-start and worker_done, each on its own 30s poll.
   test.setTimeout(180_000)
   const context = await prepareContext(orcaPage, electronApp)
   await setWorkerPreferences(orcaPage, {
@@ -613,6 +618,7 @@ test('stored Claude preferences do not leak into a Codex launch', async ({
   orcaPage,
   electronApp
 }) => {
+  // Launches the app, drives Settings, then waits out worker-start and worker_done, each on its own 30s poll.
   test.setTimeout(180_000)
   const context = await prepareContext(orcaPage, electronApp)
   await setWorkerPreferences(orcaPage, {

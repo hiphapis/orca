@@ -278,12 +278,10 @@ describe('orchestration RPC methods', () => {
     it('judges the worker-start mode on the resolved defaults, not the bare flags', async () => {
       setup()
       mockCurrentWorkerStart()
-      // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: getClientSettings returns every client setting; the mode decision reads only these three.
-      vi.spyOn(runtime, 'getClientSettings').mockReturnValue({
-        experimentalNativeChat: true,
-        openAgentTabsInChatByDefault: true,
-        experimentalStructuredNativeChat: true
-      } as ReturnType<typeof runtime.getClientSettings>)
+      // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the double implements getSettings, the only member the mode decision reads from the store.
+      vi.spyOn(runtime, 'requireStore').mockReturnValue({
+        getSettings: () => ({ experimentalNativeChat: true })
+      } as never)
       vi.spyOn(runtime, 'getOrchestrationWorkerLaunchDefaults').mockReturnValue({
         agent: 'claude',
         models: {},
