@@ -15,11 +15,9 @@ import { normalizeProjectGroups } from '../../../shared/project-groups'
 import { normalizeDisabledTuiAgents } from '../../../shared/tui-agent-selection'
 import { hasUnsupportedTuiAgentArgs } from '../../../shared/tui-agent-launch-defaults'
 import {
-  normalizeOrchestrationDefaultWorkerAgent,
-  persistedOrchestrationWorkerPreferencesRepaired,
-  normalizeOrchestrationWorkerEfforts,
-  normalizeOrchestrationWorkerModels
-} from '../../../shared/orchestration-worker-model-settings'
+  prepareLoadedOrchestrationWorkerPreferences,
+  type LoadedOrchestrationWorkerPreferences
+} from './loaded-orchestration-worker-preferences'
 import { normalizeTerminalCursorStyleDefault } from '../../../shared/terminal-cursor-style-settings'
 import { normalizeTerminalLineHeight } from '../../../shared/terminal-line-height-settings'
 import { migratePortugueseUiLanguageOnLoad } from '../../../shared/portuguese-ui-language-migration'
@@ -32,7 +30,7 @@ import {
   persistedNotificationSettingsRepaired
 } from '../applying-settings/onboarding-normalization'
 
-export type PreparedLoadedProfileSettings = {
+export type PreparedLoadedProfileSettings = LoadedOrchestrationWorkerPreferences & {
   migratedPortugueseUiLanguage: Pick<
     GlobalSettings,
     'uiLanguage' | 'uiLanguagePortugueseMigrationApplied'
@@ -55,9 +53,6 @@ export type PreparedLoadedProfileSettings = {
   migratePrimarySelectionPlatformDefault: boolean
   stampPrimarySelectionTerminalDefaults: boolean
   migratedDisabledTuiAgents: GlobalSettings['disabledTuiAgents']
-  migratedOrchestrationDefaultWorkerAgent: GlobalSettings['orchestrationDefaultWorkerAgent']
-  migratedOrchestrationWorkerModels: GlobalSettings['orchestrationWorkerModels']
-  migratedOrchestrationWorkerEfforts: GlobalSettings['orchestrationWorkerEfforts']
   migratedAgentYoloDefaults: Pick<
     GlobalSettings,
     'agentDefaultArgs' | 'agentDefaultEnv' | 'agentYoloDefaultsMigrated'
@@ -163,31 +158,8 @@ export function prepareLoadedProfileSettings(
     markNeedsSave()
   }
   const migratedDisabledTuiAgents = normalizeDisabledTuiAgents(parsed.settings?.disabledTuiAgents)
-  const migratedOrchestrationWorkerModels = normalizeOrchestrationWorkerModels(
-    parsed.settings?.orchestrationWorkerModels
-  )
-  const migratedOrchestrationWorkerEfforts = normalizeOrchestrationWorkerEfforts(
-    parsed.settings?.orchestrationWorkerEfforts,
-    migratedOrchestrationWorkerModels
-  )
-  const migratedOrchestrationDefaultWorkerAgent = normalizeOrchestrationDefaultWorkerAgent(
-    parsed.settings?.orchestrationDefaultWorkerAgent
-  )
-  // Why: persist repaired worker preferences so load-time repairs do not recur every launch.
-  if (
-    persistedOrchestrationWorkerPreferencesRepaired(
-      {
-        orchestrationDefaultWorkerAgent: parsed.settings?.orchestrationDefaultWorkerAgent,
-        orchestrationWorkerModels: parsed.settings?.orchestrationWorkerModels,
-        orchestrationWorkerEfforts: parsed.settings?.orchestrationWorkerEfforts
-      },
-      {
-        agent: migratedOrchestrationDefaultWorkerAgent,
-        models: migratedOrchestrationWorkerModels,
-        efforts: migratedOrchestrationWorkerEfforts
-      }
-    )
-  ) {
+  const orchestrationWorker = prepareLoadedOrchestrationWorkerPreferences(parsed.settings)
+  if (orchestrationWorker.repaired) {
     markNeedsSave()
   }
   const migratedAgentYoloDefaults = migrateAgentYoloDefaults(parsed.settings)
@@ -310,9 +282,7 @@ export function prepareLoadedProfileSettings(
     migratePrimarySelectionPlatformDefault,
     stampPrimarySelectionTerminalDefaults,
     migratedDisabledTuiAgents,
-    migratedOrchestrationDefaultWorkerAgent,
-    migratedOrchestrationWorkerModels,
-    migratedOrchestrationWorkerEfforts,
+    ...orchestrationWorker.preferences,
     migratedAgentYoloDefaults,
     migratedAgentPermission,
     migratedWindowsRuntimeDefault,
