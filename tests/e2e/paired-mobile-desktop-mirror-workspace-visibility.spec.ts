@@ -1,13 +1,10 @@
-/**
- * Phone paired with a desktop that is a client of an `orca serve` host: the phone's server rows
- * must be the ones the desktop's own sidebar shows, under the desktop's "Hide other-client
- * workspaces" and "Hide sleeping" filters, which the server alone cannot evaluate.
- */
+// Phone server rows must match desktop sidebar filters for other-client and sleeping workspaces; the server cannot evaluate desktop-local tabs.
 import { execFileSync } from 'node:child_process'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { z } from 'zod'
 import { expect, test } from './helpers/orca-app'
+import { NO_WORKSPACE_ROW_FILTERS } from '../../src/shared/workspace-view/workspace-row-filters'
 import { launchPhoneMirrorTopology } from './helpers/phone-mirror-topology'
 import type { PairedMobileSocket } from './helpers/paired-mobile-client'
 import {
@@ -34,6 +31,13 @@ const ReposSchema = z.object({
   repos: z.array(z.looseObject({ id: z.string(), path: z.string() }))
 })
 const HostsSchema = z.object({ hosts: z.array(z.looseObject({ hostId: z.string() })) })
+const ProjectSectionsSchema = z.object({
+  catalog: z
+    .object({
+      repos: z.array(z.looseObject({ path: z.string(), executionHostId: z.string().optional() }))
+    })
+    .nullable()
+})
 const TabsSchema = z.looseObject({ tabs: z.array(z.looseObject({ id: z.string() })) })
 
 let requestId = 0
@@ -77,6 +81,18 @@ test("phone lists a server's workspaces exactly as the desktop sidebar filters t
     const { repos } = ReposSchema.parse(await result(socket, 'repo.list', {}, serverHostId))
     const repo = `id:${repos.find((entry) => entry.path === serverRepo)?.id ?? ''}`
     const create = { setupDecision: 'skip' }
+    // The desktop window publishes the catalog its sidebar groups Project sections with.
+    await expect
+      .poll(
+        async () =>
+          ProjectSectionsSchema.parse(
+            await result(socket, 'mobileRelay.projectSections', {})
+          ).catalog?.repos.some(
+            (entry) => entry.path === serverRepo && entry.executionHostId === serverHostId
+          ) ?? false,
+        { timeout: 30_000 }
+      )
+      .toBe(true)
 
     // One workspace each: created on the server itself, by the desktop, and by the phone through it.
     await host.client.call('worktree.create', { repo, name: 'from-server', ...create })
@@ -112,7 +128,11 @@ test("phone lists a server's workspaces exactly as the desktop sidebar filters t
             const serverIds = new Set(rows.map((row) => row.worktreeId))
             const phone = filterWorktrees(
               rows.map(toMobileRow),
-              { filterRepoIds: new Set(), hideSleeping, hideDefaultBranch: false },
+              {
+                ...NO_WORKSPACE_ROW_FILTERS,
+                hideSleepingWorkspaces: hideSleeping,
+                hideWorkspacesFromOtherDevices: true
+              },
               ''
             )
             shown = phone.map((row) => row.path)
@@ -132,10 +152,7 @@ test("phone lists a server's workspaces exactly as the desktop sidebar filters t
       return shown
     }
 
-    // Hide other-client workspaces: the server's own row goes, the desktop's and its phone's stay.
-    await desktop.page.evaluate(() =>
-      window.__store!.getState().setHideWorkspacesFromOtherDevices(true)
-    )
+    // The desktop marks the server's own row as another client's; the desktop's and its phone's stay.
     await expect
       .poll(
         async () => {
@@ -149,13 +166,16 @@ test("phone lists a server's workspaces exactly as the desktop sidebar filters t
         { timeout: 60_000 }
       )
       .toEqual([true, false, false])
+    // The marks are facts, so they were there before the filter; the phone applies the value.
+    await desktop.page.evaluate(() =>
+      window.__store!.getState().setHideWorkspacesFromOtherDevices(true)
+    )
     const shown = await expectPhoneMatchesSidebar(false)
     expect(shown.map((row) => path.basename(row))).toEqual(
       expect.arrayContaining(['from-desktop', 'from-phone'])
     )
 
-    // Hide sleeping too, with a browser tab open in the desktop's workspace: only the desktop knows
-    // that tab is there, so the server alone reports the workspace asleep.
+    // Keep only a desktop-local browser tab awake; server-only sleep state cannot see it.
     const desktopRowStatus = async () => {
       const row = (await phoneRows()).find((entry) => entry.path.endsWith('from-desktop'))
       return row ? getWorktreeStatus(toMobileRow(row)) : null

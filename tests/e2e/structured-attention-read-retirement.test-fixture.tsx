@@ -6,7 +6,7 @@ import { beforeEach, afterEach, vi } from 'vitest'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { RuntimeClientTarget } from '@/runtime/runtime-client-target'
+import type { RuntimeClientTarget } from '../../src/shared/runtime-client-target'
 import type { NotificationSettings } from '../../src/shared/notification-settings-types'
 import type { AgentJournalRenderItem } from '../../src/shared/agent-session-journal-types'
 import type { AgentSessionHistoryPage } from '../../src/shared/agent-session-wire'
@@ -56,7 +56,8 @@ export const NOTIFICATION_SETTINGS: NotificationSettings = {
   customSoundId: 'system',
   customSoundPath: null,
   customSoundVolume: 1,
-  mutedNotificationSourceIds: []
+  mutedNotificationSourceIds: [],
+  notifyHiddenWorkspaces: false
 }
 export const SCOPE = {
   executionHostId: 'local',
@@ -209,6 +210,7 @@ beforeEach(() => {
   const delivery = createStructuredAttentionMobileDelivery({
     readNotificationSettings: () => ({ ...NOTIFICATION_SETTINGS, suppressWhenFocused: false }),
     readWorkspaceLabels: () => ({}),
+    isWorkspaceMuted: () => false,
     dispatch: (event) => controller.dispatch(event),
     reconcile: (state) => controller.reconcileStructuredPromptAttention(state),
     now: () => 42

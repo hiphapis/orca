@@ -1,7 +1,7 @@
 import type {
   JiraIssueSummaryGenerationRequest,
   JiraIssueSummaryGenerationCancellation
-} from '../../shared/jira-issue-summary-generation'
+} from '../../shared/jira/jira-issue-summary-generation'
 import {
   generateJiraIssueSummaryRequest,
   cancelJiraIssueSummaryRequest,
@@ -14,9 +14,10 @@ import type {
   JiraIssueListFilters,
   JiraIssueUpdate,
   JiraSiteSelection
-} from '../../shared/jira-types'
-import type { JiraMediaFormat } from '../../shared/jira-attachment-image'
+} from '../../shared/jira/jira-types'
+import type { JiraMediaFormat } from '../../shared/jira/jira-attachment-image'
 import { connect, disconnect, getStatus, selectSite, testConnection } from '../jira/client'
+import { listFavouriteFilters } from '../jira/favourite-filters'
 import {
   addIssueComment,
   createIssue,
@@ -148,6 +149,13 @@ export class RuntimeJiraCommands {
 
   jiraListProjects(siteId?: JiraSiteSelection, strict = false): ReturnType<typeof listProjects> {
     return listProjects(siteId, strict)
+  }
+
+  jiraListFavouriteFilters(
+    siteId: string,
+    signal?: AbortSignal
+  ): ReturnType<typeof listFavouriteFilters> {
+    return listFavouriteFilters(siteId, signal)
   }
 
   jiraListIssueTypes(
